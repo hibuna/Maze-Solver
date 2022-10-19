@@ -1,4 +1,3 @@
-import copy
 import sys
 from pathlib import Path
 
@@ -12,7 +11,11 @@ for module in modules:
 
 #############################################################################
 
-import Image2Matrix.main as i2m
+# builtins
+import copy
+
+# downloaded
+import Image2Matrix as i2m
 
 
 class Maze:
@@ -146,4 +149,3 @@ if __name__=="__main__":
     path = sys.argv[1]
     png  = i2m.PNG(path)
     maze = Maze(i2m.maze_matrix_walls(png))
-    
