@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 # import modules from master code dir
-# https://github.com/WillyKeurig/Image2Matrix
+# https://github.com/hibuna/Image2Matrix
 modules          = ['Image2Matrix']
 for module in modules:
     code_dir        = Path(Path.cwd().parents[1])
