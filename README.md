@@ -2,6 +2,7 @@
 
 Implementation of Dijkstra's and the A* algorithm. Work in progress.
 
+
 ## Roadmap:
 
 X   Decode image (Image2Matrix @ https://github.com/hibuna/Image2Matrix)  \
@@ -16,7 +17,6 @@ O   Implement A* algorithm                                                \
 O   Testing                                                               \
 O   Optimization                                                          
 
----
 
 ## Sources used:
 
