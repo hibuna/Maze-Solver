@@ -11,14 +11,14 @@ Implementation of Dijkstra's and the A* algorithm. Work in progress.
 X   Decode image (Image2Matrix @ https://github.com/hibuna/Image2Matrix)  \
 X   Create object representation of the maze and its coordinates          \
 X   Reduce the maze to a network of nodes (junctions and endpoints)       \
-X   Trace routes between nodes and calculate distance                     \
+X   Trace routes between nodes and calculate distance                     
 
 O   Implement Dijkstra's algorithm                                        \
 O   Test larger mazes (w/ multiple routes)                                \
 ?   Optimization                                                          \
 O   Implement A* algorithm                                                \
 O   Testing                                                               \
-O   Optimization                                                          \
+O   Optimization                                                          
 
 ---
 
