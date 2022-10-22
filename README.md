@@ -1,7 +1,7 @@
 # Maze-Solver
 
 Implementation of Dijkstra's and the A* algorithm. Work in progress.
-\
+  
 
 ## Roadmap:
 
@@ -16,7 +16,7 @@ O   Test larger mazes (w/ multiple routes)                                \
 O   Implement A* algorithm                                                \
 O   Testing                                                               \
 O   Optimization                                                          
-\
+  
 
 ## Sources used:
 
