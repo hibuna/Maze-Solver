@@ -91,10 +91,10 @@ class Maze:
             "row": row,
             "col": col,
             "previous": previous,
-            "north": north,
-            "east": east,
-            "south": south,
-            "west": west,
+            WindRose.N.name: north,
+            WindRose.E.name: east,
+            WindRose.S.name: south,
+            WindRose.W.name: west,
         }
 
     def creep(self, row: int, col: int, direction: WindRose):
