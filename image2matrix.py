@@ -18,9 +18,9 @@ def get_maze_path(png: str, inverted: bool = False):
     return maze_wall_matrix
 
 
-def print_maze(matrix, ch='H', sep=' '):
+def print_maze(matrix, ch="H", sep=" "):
     for row in matrix:
         for px in row:
-            s = ch + sep if px else ' ' + sep
-            print(s, end='')
+            s = ch + sep if px else " " + sep
+            print(s, end="")
         print()

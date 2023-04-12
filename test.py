@@ -1,16 +1,15 @@
 import unittest
 
-from errors import MatrixSizeError, PathCornerError, PathExitAmountError, PathExitSpacingError
+from errors import (
+    MatrixSizeError,
+    PathCornerError,
+    PathExitAmountError,
+    PathExitSpacingError,
+)
 from solve import Maze, Matrix, Validator, WindRose
 
 
 class TestMatrix(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls) -> None:
-        # Overwrite constants for readable matrix config in test
-        Maze.WALL = 0
-        Maze.PATH = 1
-
     def test_matrix_too_small_raises_error(self):
         matrix1 = (
             (0, 1, 0),
@@ -88,32 +87,17 @@ class TestMatrix(unittest.TestCase):
 
 
 class MazeTest(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls) -> None:
-        # Overwrite constants for readable matrix config in test
-        Maze.WALL = 0
-        Maze.PATH = 1
-
     def test_maze_exits_neighbouring_raises_error(self):
         matrix1 = (
             (0, 1, 1, 0),
             (0, 0, 0, 0),
             (0, 0, 0, 0),
         )
-        matrix2 = (
-            (0, 0, 0),
-            (1, 0, 0),
-            (1, 0, 0),
-            (0, 0, 0)
-        )
+        matrix2 = ((0, 0, 0), (1, 0, 0), (1, 0, 0), (0, 0, 0))
         maze1 = Maze(Matrix(matrix1))
         maze2 = Maze(Matrix(matrix2))
-        self.assertRaises(
-            PathExitSpacingError, Validator.exit_pos, *maze1.exit_nodes()
-        )
-        self.assertRaises(
-            PathExitSpacingError, Validator.exit_pos, *maze2.exit_nodes()
-        )
+        self.assertRaises(PathExitSpacingError, Validator.exit_pos, *maze1.exit_nodes())
+        self.assertRaises(PathExitSpacingError, Validator.exit_pos, *maze2.exit_nodes())
 
     def test_creep_finds_end_of_path_in_direction(self):
         matrix = (
@@ -133,5 +117,9 @@ class MazeTest(unittest.TestCase):
         assert (n4_r, n4_c) == (1, 4)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    # overwrite constants to allow for more readable test matrices
+    Maze.WALL = 0
+    Maze.PATH = 1
+
     unittest.main()

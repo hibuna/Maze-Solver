@@ -4,7 +4,10 @@ import sys
 
 import image2matrix as i2m
 from errors import (
-    MatrixSizeError, PathCornerError, PathExitAmountError, PathExitSpacingError, InvalidDirectionError
+    MatrixSizeError,
+    PathCornerError,
+    PathExitAmountError,
+    PathExitSpacingError,
 )
 
 CellType = dict
@@ -76,13 +79,13 @@ class Maze:
 
     @staticmethod
     def create_node(
-            row: int,
-            col: int,
-            previous: dict,
-            north: bool = False,
-            east: bool = False,
-            south: bool = False,
-            west: bool = False,
+        row: int,
+        col: int,
+        previous: dict,
+        north: bool = False,
+        east: bool = False,
+        south: bool = False,
+        west: bool = False,
     ):
         return {
             "row": row,
@@ -118,6 +121,7 @@ class Maze:
         col -= d_col
         return row, col
 
+
 class Validator:
     @staticmethod
     def validate(matrix: MatrixType):
@@ -148,10 +152,10 @@ class Validator:
     def exit_amt(matrix: MatrixType):
         matrix = Matrix(matrix)
         border_cells = (
-            *[cell for cell in matrix.row(0)],   # North
+            *[cell for cell in matrix.row(0)],  # North
             *[cell for cell in matrix.col(-1)],  # East
             *[cell for cell in matrix.row(-1)],  # South
-            *[cell for cell in matrix.col(0)],   # West
+            *[cell for cell in matrix.col(0)],  # West
         )
         exits = [cell for cell in border_cells if cell]
         if len(exits) != 2:
@@ -168,7 +172,7 @@ class Validator:
 
 
 if __name__ == "__main__":
-    assert sys.argv[1], 'Missing argument or not running through CLI'
+    assert sys.argv[1], "Missing argument or not running through CLI"
     file = sys.argv[1]
     path = os.path.join(os.path.dirname(__file__), file)
 

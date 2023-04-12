@@ -12,7 +12,3 @@ class PathCornerError(Exception):
 
 class PathExitSpacingError(Exception):
     ...
-
-
-class InvalidDirectionError(Exception):
-    ...
