@@ -1,6 +1,6 @@
 import unittest
 
-from errors import MatrixSizeError, PathCornerError, PathExitError
+from errors import MatrixSizeError, PathCornerError, PathExitAmountError, PathExitSpacingError
 from solve import Maze, Matrix, Validator
 
 
@@ -38,7 +38,7 @@ class TestMatrix(unittest.TestCase):
             (1, 0, 0),
             (0, 1, 0),
         )
-        self.assertRaises(PathExitError, Validator.exit_cell_amt, matrix)
+        self.assertRaises(PathExitAmountError, Validator.exit_cell_amt, matrix)
 
     def test_row_out_of_bounds(self):
         matrix = (
@@ -97,10 +97,10 @@ class MazeTest(unittest.TestCase):
         maze1 = Maze(Matrix(matrix1))
         maze2 = Maze(Matrix(matrix2))
         self.assertRaises(
-            PathExitError, Validator.exit_cell_pos, *maze1.exit_cells()
+            PathExitSpacingError, Validator.exit_cell_pos, *maze1.exit_cells()
         )
         self.assertRaises(
-            PathExitError, Validator.exit_cell_pos, *maze2.exit_cells()
+            PathExitSpacingError, Validator.exit_cell_pos, *maze2.exit_cells()
         )
 
 

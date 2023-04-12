@@ -2,9 +2,13 @@ class MatrixSizeError(Exception):
     ...
 
 
-class PathExitError(Exception):
+class PathExitAmountError(Exception):
     ...
 
 
 class PathCornerError(Exception):
+    ...
+
+
+class PathExitSpacingError(Exception):
     ...

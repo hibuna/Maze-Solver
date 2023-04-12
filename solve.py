@@ -2,7 +2,9 @@ import os
 import sys
 
 import image2matrix as i2m
-from errors import MatrixSizeError, PathCornerError, PathExitError
+from errors import (
+    MatrixSizeError, PathCornerError, PathExitAmountError, PathExitSpacingError
+)
 
 CellType = tuple[int, int]
 RowType = ColType = tuple[bool, ...]
@@ -94,7 +96,7 @@ class Validator:
         border_cells = (*north, *east, *south, *west)
         exits = [cell for cell in border_cells if cell]
         if len(exits) != 2:
-            raise PathExitError("Expecting exactly 2 exits")
+            raise PathExitAmountError("Expecting exactly 2 exits")
 
     @staticmethod
     def exit_cell_pos(start_cell: CellType, end_cell: CellType):
@@ -103,7 +105,7 @@ class Validator:
         d_x = abs(start_cell[1] - end_cell[1])
         # if 1 space apart and on same row/col
         if d_x == 0 and d_y == 1 or d_y == 0 and d_x == 1:
-            raise PathExitError("Exits must be at least 1 cell apart")
+            raise PathExitSpacingError("Exits must be at least 1 cell apart")
 
 
 if __name__ == "__main__":
