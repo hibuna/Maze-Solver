@@ -11,7 +11,9 @@ def get_maze_path(png: str, inverted: bool = False):
 
     maze_wall_matrix = []
     for row in array:
-        maze_wall_matrix.append([cell == wall for cell in row])
+        maze_wall_matrix.append((cell == wall for cell in row))
+
+    maze_wall_matrix = tuple((tuple(row) for row in maze_wall_matrix))
 
     return maze_wall_matrix
 
