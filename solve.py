@@ -89,11 +89,13 @@ class Validator:
 
     @staticmethod
     def exit_cell_amt(matrix: MatrixType):
-        north = [cell for cell in matrix[0]]
-        east = [cell for cell in [row[-1] for row in matrix]]
-        south = [cell for cell in matrix[-1]]
-        west = [cell for cell in [row[0] for row in matrix]]
-        border_cells = (*north, *east, *south, *west)
+        matrix = Matrix(matrix)
+        border_cells = (
+            *[cell for cell in matrix.row(0)],   # North
+            *[cell for cell in matrix.col(-1)],  # East
+            *[cell for cell in matrix.row(-1)],  # South
+            *[cell for cell in matrix.col(0)],   # West
+        )
         exits = [cell for cell in border_cells if cell]
         if len(exits) != 2:
             raise PathExitAmountError("Expecting exactly 2 exits")
