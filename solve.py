@@ -13,10 +13,10 @@ MatrixType = tuple[RowType, ...]
 
 
 class WindRose(enum.Enum):
-    N = enum.auto()
-    E = enum.auto()
-    S = enum.auto()
-    W = enum.auto()
+    N = -1, 0
+    E = 0, 1
+    S = 1, 0
+    W = 0, -1
 
 
 class Matrix:
@@ -96,19 +96,8 @@ class Maze:
 
     def creep(self, row: int, col: int, direction: WindRose):
         """Creep from a point until you hit a wall. Return row, col of cell before wall."""
-        match direction:
-            case(WindRose.N):
-                d_row, d_col = -1, 0
-            case(WindRose.E):
-                d_row, d_col = 0, 1
-            case(WindRose.S):
-                d_row, d_col = 1, 0
-            case(WindRose.W):
-                d_row, d_col = 0, -1
-            case _:
-                raise InvalidDirectionError
-
         # creep until out of bounds or hitting wall
+        d_row, d_col = direction.value  # delta row/col
         while True:
             row += d_row
             col += d_col
