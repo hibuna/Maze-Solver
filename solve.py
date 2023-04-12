@@ -1,14 +1,22 @@
+import enum
 import os
 import sys
 
 import image2matrix as i2m
 from errors import (
-    MatrixSizeError, PathCornerError, PathExitAmountError, PathExitSpacingError
+    MatrixSizeError, PathCornerError, PathExitAmountError, PathExitSpacingError, InvalidDirectionError
 )
 
-CellType = tuple[int, int]
+CellType = dict
 RowType = ColType = tuple[bool, ...]
 MatrixType = tuple[RowType, ...]
+
+
+class WindRose(enum.Enum):
+    N = enum.auto()
+    E = enum.auto()
+    S = enum.auto()
+    W = enum.auto()
 
 
 class Matrix:
@@ -32,44 +40,104 @@ class Matrix:
 
 class Maze:
     def __init__(self, matrix: Matrix):
-        self.matrix = matrix
+        self.mx = matrix
+
+    WALL = False
+    PATH = True
 
     def solve(self):
-        start_cell, end_cell = self.exit_cells()
+        # start and end have ["previous"] == {}
+        node_start, node_end = self.exit_nodes()
         ...
 
-    def exit_cells(self) -> tuple[CellType, CellType]:
-        cells = []
-        north = self.matrix.row(0)
-        east = self.matrix.col(-1)
-        south = self.matrix.row(-1)
-        west = self.matrix.col(0)
+    def exit_nodes(self) -> tuple[dict, dict]:
+        nodes = []
+        north_border = self.mx.row(0)
+        east_border = self.mx.col(-1)
+        south_border = self.mx.row(-1)
+        west_border = self.mx.col(0)
 
-        for i in range(self.matrix.width):
-            if north[i]:
-                cells.append((0, i))
-            if south[i]:
-                cells.append((self.matrix.height - 1, i))
+        for i in range(self.mx.width):
+            if north_border[i] is Maze.PATH:
+                nodes.append((0, i))
+            if south_border[i] is Maze.PATH:
+                nodes.append((self.mx.height - 1, i))
 
-        for i in range(self.matrix.height):
-            if east[i]:
-                cells.append((i, self.matrix.width - 1))
-            if west[i]:
-                cells.append((i, 0))
+        for i in range(self.mx.height):
+            if east_border[i] is Maze.PATH:
+                nodes.append((i, self.mx.width - 1))
+            if west_border[i] is Maze.PATH:
+                nodes.append((i, 0))
 
-        start_cell, end_cell = cells
-        return start_cell, end_cell
+        start, end = nodes
+        start = self.create_node(row=start[0], col=start[1], previous={})
+        end = self.create_node(row=end[0], col=end[1], previous={})
+        return start, end
 
+    @staticmethod
+    def create_node(
+            row: int,
+            col: int,
+            previous: dict,
+            north: bool = False,
+            east: bool = False,
+            south: bool = False,
+            west: bool = False,
+    ):
+        return {
+            "row": row,
+            "col": col,
+            "previous": previous,
+            "north": north,
+            "east": east,
+            "south": south,
+            "west": west,
+        }
+
+    def creep(self, row: int, col: int, direction: WindRose):
+        """Creep from a point until you hit a wall. Return row, col of cell before wall."""
+        match direction:
+            case(WindRose.N):
+                d_row, d_col = -1, 0
+            case(WindRose.E):
+                d_row, d_col = 0, 1
+            case(WindRose.S):
+                d_row, d_col = 1, 0
+            case(WindRose.W):
+                d_row, d_col = 0, -1
+            case _:
+                raise InvalidDirectionError
+
+        # creep until out of bounds or hitting wall
+        while True:
+            row += d_row
+            col += d_col
+            out_of_bounds = (
+                row < 0,
+                row >= self.mx.height,
+                col < 0,
+                col >= self.mx.width,
+            )
+            if any(out_of_bounds):
+                break
+            next_cell = self.mx.matrix[row][col]
+            if next_cell is Maze.WALL:
+                break
+
+        # return previous cell after hitting wall
+        row -= d_row
+        col -= d_col
+        return row, col
 
 class Validator:
     @staticmethod
     def validate(matrix: MatrixType):
         Validator.size(matrix)
         Validator.corners(matrix)
-        Validator.exit_cell_amt(matrix)
+        Validator.exit_amt(matrix)
 
         maze = Maze(Matrix(matrix))
-        Validator.exit_cell_pos(*maze.exit_cells())
+        Validator.exit_pos(*maze.exit_nodes())
 
     @staticmethod
     def size(matrix: MatrixType):
@@ -88,7 +156,7 @@ class Validator:
             raise PathCornerError("Corner cannot be path")
 
     @staticmethod
-    def exit_cell_amt(matrix: MatrixType):
+    def exit_amt(matrix: MatrixType):
         matrix = Matrix(matrix)
         border_cells = (
             *[cell for cell in matrix.row(0)],   # North
@@ -101,10 +169,10 @@ class Validator:
             raise PathExitAmountError("Expecting exactly 2 exits")
 
     @staticmethod
-    def exit_cell_pos(start_cell: CellType, end_cell: CellType):
+    def exit_pos(node_start: dict, node_end: dict):
         # calc delta pos
-        d_y = abs(start_cell[0] - end_cell[0])
-        d_x = abs(start_cell[1] - end_cell[1])
+        d_y = abs(node_start["row"] - node_end["row"])
+        d_x = abs(node_start["col"] - node_end["col"])
         # if 1 space apart and on same row/col
         if d_x == 0 and d_y == 1 or d_y == 0 and d_x == 1:
             raise PathExitSpacingError("Exits must be at least 1 cell apart")
