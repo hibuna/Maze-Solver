@@ -10,7 +10,6 @@ from errors import (
     PathExitSpacingError,
 )
 
-CellType = dict
 RowType = ColType = tuple[bool, ...]
 MatrixType = tuple[RowType, ...]
 
@@ -86,7 +85,7 @@ class Maze:
         east: bool = False,
         south: bool = False,
         west: bool = False,
-    ):
+    ) -> dict:
         return {
             "row": row,
             "col": col,
@@ -97,9 +96,9 @@ class Maze:
             WindRose.W.name: west,
         }
 
-    def creep(self, row: int, col: int, direction: WindRose):
-        """Creep from a point until you hit a wall. Return row, col of cell before wall."""
-        # creep until out of bounds or hitting wall
+    def creep(self, row: int, col: int, direction: WindRose) -> tuple[int, int]:
+        """Creep from a point until you hit a wall or move outside the matrix.
+        Return row, col of the cell before either happens."""
         d_row, d_col = direction.value  # delta row/col
         while True:
             row += d_row
@@ -133,12 +132,12 @@ class Validator:
         Validator.exit_pos(*maze.exit_nodes())
 
     @staticmethod
-    def size(matrix: MatrixType):
+    def size(matrix: MatrixType) -> None:
         if len(matrix) < 3 or any(len(row) < 3 for row in matrix):
             raise MatrixSizeError("Matrix must be at least 3x3")
 
     @staticmethod
-    def corners(matrix: MatrixType):
+    def corners(matrix: MatrixType) -> None:
         corners = [
             matrix[0][0],
             matrix[0][-1],
@@ -149,7 +148,7 @@ class Validator:
             raise PathCornerError("Corner cannot be path")
 
     @staticmethod
-    def exit_amt(matrix: MatrixType):
+    def exit_amt(matrix: MatrixType) -> None:
         matrix = Matrix(matrix)
         border_cells = (
             *[cell for cell in matrix.row(0)],  # North
@@ -162,7 +161,7 @@ class Validator:
             raise PathExitAmountError("Expecting exactly 2 exits")
 
     @staticmethod
-    def exit_pos(node_start: dict, node_end: dict):
+    def exit_pos(node_start: dict, node_end: dict) -> None:
         # calc delta pos
         d_y = abs(node_start["row"] - node_end["row"])
         d_x = abs(node_start["col"] - node_end["col"])
