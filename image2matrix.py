@@ -3,7 +3,7 @@ import numpy as np
 from PIL import Image
 
 
-def get_maze_walls(png: str, inverted: bool = False):
+def get_maze_path(png: str, inverted: bool = False):
     img = Image.open(png).convert("RGB")
     array = np.array(img).tolist()
 
