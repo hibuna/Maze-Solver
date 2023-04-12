@@ -20,6 +20,7 @@ class Maze:
         self.matrix = matrix
         self.width = len(matrix[0])
         self.height = len(matrix)
+        self.start, self.end = self.exit_cells()
 
     def row(self, index: int) -> Row:
         i = index if index >= 0 else (index * -1) - 1  # equalize negative index
@@ -33,27 +34,27 @@ class Maze:
             raise IndexError(f"Index out of bounds: {index}")
         return tuple([row[i] for row in self.matrix])
 
-    def start_cell(self) -> Cell:
+    def exit_cells(self) -> list[Cell, Cell]:
+        cells = []
+
+        # North
         for cell in self.row(0):
             if cell:
-                return 0, self.row(0).index(cell)
-
-        for cell in self.col(0):
-            if cell:
-                return self.col(0).index(cell), 0
-
-        raise PathExitError("No path found in first row or first col")
-
-    def end_cell(self) -> Cell:
-        for cell in self.row(-1):
-            if cell:
-                return len(self.matrix), self.row(-1).index(cell)
-
+                cells.append((0, self.row(0).index(cell)))
+        # East
         for cell in self.col(-1):
             if cell:
-                return self.col(-1).index(cell), len(self.matrix[0])
+                cells.append((self.col(-1).index(cell), self.width - 1))
+        # South
+        for cell in self.row(-1):
+            if cell:
+                cells.append((self.height - 1, self.row(-1).index(cell)))
+        # West
+        for cell in self.col(0):
+            if cell:
+                cells.append((self.col(0).index(cell), 0))
 
-        raise PathExitError("No path found in last row or last col")
+        return cells
 
     @staticmethod
     def validate_matrix(matrix: Matrix) -> None:
