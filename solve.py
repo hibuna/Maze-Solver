@@ -5,6 +5,7 @@ from typing import Optional, Iterable
 from dataclasses import dataclass
 
 import image2matrix as i2m
+import matrix2image as m2i
 from errors import (
     MatrixSizeError,
     PathCornerError,
@@ -69,6 +70,14 @@ class Matrix:
         row, col = cell
         return self.matrix[row][col]
 
+    def cells(self) -> list[CellType]:
+        cells = []
+        for row in range(self.height):
+            for col in range(self.width):
+                if self.matrix[row][col]:
+                    cells.append((row, col))
+        return cells
+
 
 class Maze:
     def __init__(self, matrix: Matrix):
@@ -85,7 +94,6 @@ class Maze:
         self.find_exit_cells()
         self.create_nodes()
         self.find_solution()
-        # some image_creation
 
     def find_solution(self) -> list[CellType]:
         solution = [self.node_end.cell]
@@ -337,7 +345,12 @@ if __name__ == "__main__":
 
     # generate your own maze img with: https://keesiemeijer.github.io/maze-generator/
     maze_path = i2m.get_maze_path(png=path)
-    i2m.print_maze(matrix=maze_path)
+    # i2m.print_maze(matrix=maze_path)
 
     Validator.validate(matrix=maze_path)
     maze = Maze(Matrix(maze_path))
+    maze.solve()
+
+    target_file = f"{file.split('.')[0]} - solved.png"
+    target = os.path.join(os.path.dirname(__file__), target_file)
+    m2i.create_png(target, (maze.mx.width, maze.mx.height), maze.mx.cells(), maze.solution)
