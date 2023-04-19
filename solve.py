@@ -82,23 +82,35 @@ class Maze:
     PATH = True
 
     def solve(self):
-        self.create_exit_nodes()
+        self.find_exit_cells()
         self.create_nodes()
         self.find_solution()
         # some image_creation
 
     def find_solution(self) -> list[CellType]:
-        ...
+        solution = [self.node_end.cell]
+        cell = self.node_end.cell
+        direction = self.node_end.origin
+        while True:
+            node = self.creep(cell, direction, traceback=True, save_path_to=solution)
+            if node is self.node_start:
+                break
+            cell = node.cell
+            direction = node.origin
+
+        self.solution = solution
+        return solution
 
     def creep(
         self,
         cell: CellType,
         direction: WindRose,
-        traceback: bool = False
+        save_path_to: list = None,
+        traceback: bool = False,
     ) -> Node:
         """Creep down a path and around corners to find the next junction or dead end."""
         while True:
-            cell = self.walk(cell, direction)
+            cell = self.walk(cell, direction, save_path_to=save_path_to)
             if self.is_node(cell):  # TODO: optimize by pruning dead ends?
                 if traceback:
                     return self.bst_root.find(cell)
@@ -109,25 +121,29 @@ class Maze:
         self,
         cell: CellType,
         direction: WindRose,
+        save_path_to: list = None,
     ) -> CellType:
         """Walk from a point until you find a node, hit a wall or move outside the matrix.
         Return row, col of the cell before either happens."""
-        cell_next = self.take_step(cell, direction)
+        cell_next = self.take_step(cell, direction, save_path_to=save_path_to)
         while self.take_step(cell_next, direction):
             if self.is_node(cell_next):
                 break
-            cell_next = self.take_step(cell_next, direction)
+            cell_next = self.take_step(cell_next, direction, save_path_to=save_path_to)
         return cell_next
 
     def take_step(
         self,
         cell: CellType,
         direction: WindRose,
+        save_path_to: list = None,
     ) -> CellType:
         row, col = cell
         d_row, d_col = direction.value
         cell_next = (row + d_row, col + d_col)
         if self.is_traversable(cell_next):
+            if save_path_to is not None:
+                save_path_to.append(cell_next)
             return cell_next
 
     def find_adjacent(
@@ -158,12 +174,19 @@ class Maze:
                 node.checked.append(direction)
             self.bst_root.add(node)
 
-        node_start = self.node_start
-        self.bst_root = BST(node_start)
-        recursive_creep(node_start)
+        cell_start, cell_end = self.find_exit_cells()
+        self.node_start = self.create_node(cell_start, origin=None)
+
+        self.bst_root = BST(self.node_start)
+        recursive_creep(self.node_start)
+
+        # Set origin of ending Node to set up traceback
+        self.node_end = self.bst_root.find(cell_end)
+        self.node_end.origin = self.find_adjacent(cell_end)[0]  # only possible neighbour
+
         return self.bst_root
 
-    def create_exit_nodes(self) -> tuple[Node, Node]:
+    def find_exit_cells(self) -> tuple[CellType, CellType]:
         cells = []
         north_border = self.mx.row(0)
         east_border = self.mx.col(-1)
@@ -182,10 +205,7 @@ class Maze:
             if west_border[i] is Maze.PATH:
                 cells.append((i, 0))
 
-        start_cell, end_cell = cells
-        self.node_start = self.create_node(start_cell, origin=None)
-        self.node_end = self.create_node(end_cell, origin=None)
-        return self.node_start, self.node_end
+        return cells
 
     @staticmethod
     def create_node(
@@ -301,9 +321,9 @@ class Validator:
 
     @staticmethod
     def exit_pos(maze: Maze) -> None:
-        node_start, node_end = maze.create_exit_nodes()
-        row_start, col_start = node_start.cell
-        row_end, col_end = node_end.cell
+        node_start, node_end = maze.find_exit_cells()
+        row_start, col_start = node_start
+        row_end, col_end = node_end
         d_y = abs(row_start - row_end)
         d_x = abs(col_start - col_end)
         if d_x == 0 and d_y == 1 or d_y == 0 and d_x == 1:

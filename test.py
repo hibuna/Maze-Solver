@@ -7,7 +7,7 @@ from errors import (
     PathExitAmountError,
     PathExitSpacingError,
 )
-from solve import Maze, Matrix, Validator, WindRose, BST
+from solve import Maze, Matrix, Validator, WindRose, BST, CellType
 
 
 class BSTMock:
@@ -17,6 +17,10 @@ class BSTMock:
     def add(self, node: dict):
         self.nodes.append(node)
 
+    def find(self, cell: CellType):
+        for node in self.nodes:
+            if node.cell == cell:
+                return node
 
 class TestMatrix(unittest.TestCase):
     def test_matrix_too_small_raises_error(self):
@@ -182,8 +186,8 @@ class MazeTest(unittest.TestCase):
         )
         maze1 = Maze(Matrix(matrix1))
         maze2 = Maze(Matrix(matrix2))
-        maze1.create_exit_nodes()
-        maze2.create_exit_nodes()
+        maze1.find_exit_cells()
+        maze2.find_exit_cells()
 
         # mock BST to just return a list of created nodes
         with patch("solve.BST", BSTMock):
@@ -216,7 +220,7 @@ class MazeTest(unittest.TestCase):
             (0, 1, 0, 0),
         )
         maze = Maze(Matrix(matrix))
-        maze.create_exit_nodes()
+        maze.find_exit_cells()
 
         # mock BST to just return a list of created nodes
         with patch("solve.BST", BSTMock):
@@ -237,6 +241,31 @@ class MazeTest(unittest.TestCase):
                 assert node.origin is WindRose.N
             else:
                 assert 0
+
+    def test_find_solution_finds_solution(self):
+        matrix1 = (
+            (0, 1, 0, 0, 0),
+            (0, 1, 1, 1, 0),
+            (0, 0, 1, 0, 0),
+            (0, 1, 1, 1, 1),
+            (0, 0, 0, 0, 0),
+        )
+        matrix2 = (
+            (0, 0, 1, 0, 0),
+            (0, 1, 1, 1, 0),
+            (0, 0, 1, 0, 0),
+            (1, 1, 1, 1, 0),
+            (0, 0, 0, 0, 0),
+        )
+        maze1 = Maze(Matrix(matrix1))
+        maze2 = Maze(Matrix(matrix2))
+        maze1.find_exit_cells()
+        maze2.find_exit_cells()
+        maze1.create_nodes()
+        maze2.create_nodes()
+
+        assert maze1.find_solution() == [(3, 4), (3, 3), (3, 2), (2, 2), (1, 2), (1, 1), (0, 1)]
+        assert maze2.find_solution() == [(3, 0), (3, 1), (3, 2), (2, 2), (1, 2), (0, 2)]
 
 
 class BinarySearchTreeTest(unittest.TestCase):
