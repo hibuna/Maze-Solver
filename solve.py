@@ -4,6 +4,9 @@ import sys
 from typing import Optional, Iterable
 from dataclasses import dataclass
 
+import mazelib
+from mazelib.generate.BacktrackingGenerator import BacktrackingGenerator
+
 import image2matrix as i2m
 import matrix2image as m2i
 from errors import (
@@ -261,15 +264,24 @@ class BST:
         self.right = None
 
     def _search(self, key) -> tuple["BST", bool]:
-        if key < self.key:
-            if self.left:
-                return self.left._search(key)
-            return self, False
-        elif key > self.key:
-            if self.right:
-                return self.right._search(key)
-            return self, False
-        return self, True
+        bst = self
+        while True:
+            if bst.key < key:
+                if bst.left:
+                    bst = bst.left
+                elif bst.left and bst.left.key == key:
+                    return bst.left, True
+                else:
+                    return bst, False
+            elif bst.key > key:
+                if bst.right:
+                    bst = bst.right
+                elif bst.right and bst.right.key == key:
+                    return bst.right, True
+                else:
+                    return bst, False
+            else:
+                return bst, True
 
     def add(self, maze_node: Node) -> None:
         key = sum(maze_node.cell)
@@ -350,10 +362,16 @@ if __name__ == "__main__":
     maze_path = i2m.get_maze_path(png=path)
     # i2m.print_maze(matrix=maze_path)
 
+    # maze = mazelib.Maze()
+    # maze.generator = BacktrackingGenerator(1000, 1000)
+    # maze.generate()
+    # maze.generate_entrances()
+
     Validator.validate(matrix=maze_path)
     maze = Maze(Matrix(maze_path))
     maze.solve()
 
     target_file = f"{file.split('.')[0]} - solved.png"
-    target = os.path.join(os.path.dirname(__file__), target_file)
+    target = os.path.join(os.path.dirname(__file__), path)
     m2i.create_png(target, (maze.mx.width, maze.mx.height), maze.mx.cells(), maze.solution)
+    # m2i.create_png(target, (len(maze.grid), len(maze.grid)), maze.grid, [])
