@@ -13,6 +13,7 @@ from errors import (
     PathExitSpacingError,
 )
 
+
 class Type:
     Cell = tuple[int, int]
     Row = tuple[bool, ...]
