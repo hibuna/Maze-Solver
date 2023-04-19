@@ -1,6 +1,7 @@
 import enum
 import os
 import sys
+from typing import Optional, Iterable
 
 import image2matrix as i2m
 from errors import (
@@ -19,6 +20,22 @@ class WindRose(enum.Enum):
     E = 0, 1
     S = 1, 0
     W = 0, -1
+
+    @staticmethod
+    def opposite(direction: "WindRose") -> "WindRose":
+        match direction:
+            case(WindRose.N):
+                return WindRose.S
+            case(WindRose.E):
+                return WindRose.W
+            case(WindRose.S):
+                return WindRose.N
+            case(WindRose.W):
+                return WindRose.E
+
+    @staticmethod
+    def all():
+        return [direction for direction in WindRose]
 
 
 class Matrix:
@@ -39,21 +56,38 @@ class Matrix:
             raise IndexError(f"Index out of bounds: {index}")
         return tuple([row[index] for row in self.matrix])
 
+    def cell(self, cell: tuple[int, int]):
+        row, col = cell
+        return self.matrix[row][col]
+
 
 class Maze:
     def __init__(self, matrix: Matrix):
         self.mx = matrix
+        self.bst_root: Optional[BST] = None
 
     WALL = False
     PATH = True
 
-    def solve(self):
-        # start and end have ["previous"] == {}
-        node_start, node_end = self.exit_nodes()
-        ...
+    @staticmethod
+    def create_node(
+        cell: tuple[int, int],
+        origin: Optional[WindRose],
+        checked: Iterable[WindRose] = None,
+    ) -> dict:
+        if checked is None:
+            checked = []
+        if origin not in checked and origin is not None:
+            checked.append(origin)
+
+        return {
+            "cell": cell,
+            "origin": origin,
+            "checked": checked,
+        }
 
     def exit_nodes(self) -> tuple[dict, dict]:
-        nodes = []
+        cells = []
         north_border = self.mx.row(0)
         east_border = self.mx.col(-1)
         south_border = self.mx.row(-1)
@@ -61,64 +95,133 @@ class Maze:
 
         for i in range(self.mx.width):
             if north_border[i] is Maze.PATH:
-                nodes.append((0, i))
+                cells.append((0, i))
             if south_border[i] is Maze.PATH:
-                nodes.append((self.mx.height - 1, i))
+                cells.append((self.mx.height - 1, i))
 
         for i in range(self.mx.height):
             if east_border[i] is Maze.PATH:
-                nodes.append((i, self.mx.width - 1))
+                cells.append((i, self.mx.width - 1))
             if west_border[i] is Maze.PATH:
-                nodes.append((i, 0))
+                cells.append((i, 0))
 
-        start, end = nodes
-        start = self.create_node(row=start[0], col=start[1], previous={})
-        end = self.create_node(row=end[0], col=end[1], previous={})
-        return start, end
+        start_cell, end_cell = cells
+        start_node = self.create_node(start_cell, origin=None)
+        end_node = self.create_node(end_cell, origin=None)
+        return start_node, end_node
 
-    @staticmethod
-    def create_node(
-        row: int,
-        col: int,
-        previous: dict,
-        north: bool = False,
-        east: bool = False,
-        south: bool = False,
-        west: bool = False,
-    ) -> dict:
-        return {
-            "row": row,
-            "col": col,
-            "previous": previous,
-            WindRose.N.name: north,
-            WindRose.E.name: east,
-            WindRose.S.name: south,
-            WindRose.W.name: west,
-        }
+    def create_nodes(self) -> "BST":
 
-    def creep(self, row: int, col: int, direction: WindRose) -> tuple[int, int]:
-        """Creep from a point until you hit a wall or move outside the matrix.
+        def recursive_creep(node: dict):
+            for direction in WindRose:
+                if direction in node["checked"]:
+                    continue
+                if not self.take_step(node["cell"], direction):
+                    node["checked"].append(direction)
+                    continue
+                node_tmp = self.creep(node["cell"], direction)
+                recursive_creep(node_tmp)
+                node["checked"].append(direction)
+            self.bst_root.add(node)
+
+        node_start, _ = self.exit_nodes()
+        self.bst_root = BST(node_start)
+        recursive_creep(node_start)
+        return self.bst_root
+
+    def take_step(self, cell: tuple[int, int], direction: WindRose) -> tuple[int, int]:
+        row, col = cell
+        d_row, d_col = direction.value
+        cell_next = (row + d_row, col + d_col)
+        if self.is_traversable(cell_next):
+            return cell_next
+
+    def walk(self, cell: tuple[int, int], direction: WindRose) -> tuple[int, int]:
+        """Walk from a point until you find a node, hit a wall or move outside the matrix.
         Return row, col of the cell before either happens."""
-        d_row, d_col = direction.value  # delta row/col
-        while True:
-            row += d_row
-            col += d_col
-            out_of_bounds = (
-                row < 0,
-                row >= self.mx.height,
-                col < 0,
-                col >= self.mx.width,
-            )
-            if any(out_of_bounds):
+        cell_next = self.take_step(cell, direction)
+        while self.take_step(cell_next, direction):
+            if self.is_node(cell_next):
                 break
-            next_cell = self.mx.matrix[row][col]
-            if next_cell is Maze.WALL:
-                break
+            cell_next = self.take_step(cell_next, direction)
+        return cell_next
 
-        # return previous cell after hitting wall
-        row -= d_row
-        col -= d_col
-        return row, col
+    def creep(self, cell: tuple[int, int], direction: WindRose) -> dict:
+        """Creep down a path and around corners to find the next junction or dead end."""
+        while True:
+            cell = self.walk(cell, direction=direction)
+            if self.is_node(cell):  # TODO: optimize by pruning dead ends?
+                return self.create_node(cell, origin=WindRose.opposite(direction))
+            direction = self.find_adjacent(cell, except_=WindRose.opposite(direction))[0]
+
+    def find_adjacent(
+        self, cell: tuple[int, int], except_: Optional[WindRose] = None
+    ) -> list[WindRose]:
+        directions = []
+        for direction in WindRose:
+            cell_adj = self.take_step(cell, direction)
+            if cell_adj is None:
+                continue
+            if self.mx.cell(cell_adj) is Maze.PATH:
+                directions.append(direction)
+        if except_ and except_ in directions:
+            directions.remove(except_)
+        return directions
+
+    def is_traversable(self, cell: tuple[int, int]):
+        row, col = cell
+        crossed_borders = (
+            row < 0,
+            row >= self.mx.height,
+            col < 0,
+            col >= self.mx.width,
+        )
+        return not any(crossed_borders) and self.mx.cell(cell) is Maze.PATH
+
+    def is_node(self, cell: tuple[int, int]):
+        return len(self.find_adjacent(cell)) != 2
+
+    def is_junction(self, cell: tuple[int, int]):
+        return len(self.find_adjacent(cell)) in (3, 4)
+
+
+class BST:
+    """Binary Search Tree"""
+    def __init__(self, maze_node: dict) -> None:
+        self.key = sum(maze_node["cell"])
+        self.maze_nodes = [maze_node]
+        self.left = None
+        self.right = None
+
+    def _search(self, key) -> tuple["BST", bool]:
+        if key < self.key:
+            if self.left:
+                return self.left._search(key)
+            return self, False
+        elif key > self.key:
+            if self.right:
+                return self.right._search(key)
+            return self, False
+        return self, True
+
+    def add(self, maze_node: dict) -> None:
+        key = sum(maze_node["cell"])
+        leaf, found = self._search(key)
+        if found and maze_node not in leaf.maze_nodes:
+            leaf.maze_nodes.append(maze_node)
+            return
+        if not found and key < leaf.key:
+            leaf.left = BST(maze_node)
+        if not found and key > leaf.key:
+            leaf.right = BST(maze_node)
+
+    def find(self, cell: tuple[int, int]):
+        bst_node, found = self._search(sum(cell))
+        if not found:
+            return
+        for node in bst_node.maze_nodes:
+            if node["cell"] == cell:
+                return node
 
 
 class Validator:
@@ -129,7 +232,7 @@ class Validator:
         Validator.exit_amt(matrix)
 
         maze = Maze(Matrix(matrix))
-        Validator.exit_pos(*maze.exit_nodes())
+        Validator.exit_pos(maze)
 
     @staticmethod
     def size(matrix: MatrixType) -> None:
@@ -161,11 +264,12 @@ class Validator:
             raise PathExitAmountError("Expecting exactly 2 exits")
 
     @staticmethod
-    def exit_pos(node_start: dict, node_end: dict) -> None:
-        # calc delta pos
-        d_y = abs(node_start["row"] - node_end["row"])
-        d_x = abs(node_start["col"] - node_end["col"])
-        # if 1 space apart and on same row/col
+    def exit_pos(maze: Maze) -> None:
+        node_start, node_end = maze.exit_nodes()
+        row_start, col_start = node_start["cell"]
+        row_end, col_end = node_end["cell"]
+        d_y = abs(row_start - row_end)
+        d_x = abs(col_start - col_end)
         if d_x == 0 and d_y == 1 or d_y == 0 and d_x == 1:
             raise PathExitSpacingError("Exits must be at least 1 cell apart")
 
@@ -178,3 +282,6 @@ if __name__ == "__main__":
     # generate your own maze img with: https://keesiemeijer.github.io/maze-generator/
     maze_path = i2m.get_maze_path(png=path)
     i2m.print_maze(matrix=maze_path)
+
+    Validator.validate(matrix=maze_path)
+    maze = Maze(Matrix(maze_path))
