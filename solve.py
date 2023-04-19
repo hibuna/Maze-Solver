@@ -81,22 +81,78 @@ class Maze:
     WALL = False
     PATH = True
 
-    @staticmethod
-    def create_node(
+    def creep(
+        self,
         cell: CellType,
-        origin: Optional[WindRose],
-        checked: Iterable[WindRose] = None,
+        direction: WindRose,
+        traceback: bool = False
     ) -> Node:
-        if checked is None:
-            checked = []
-        if origin not in checked and origin is not None:
-            checked.append(origin)
+        """Creep down a path and around corners to find the next junction or dead end."""
+        while True:
+            cell = self.walk(cell, direction)
+            if self.is_node(cell):  # TODO: optimize by pruning dead ends?
+                if traceback:
+                    return self.bst_root.find(cell)
+                return self.create_node(cell, origin=WindRose.opposite(direction))
+            direction = self.find_adjacent(cell, except_=WindRose.opposite(direction))[0]
 
-        return Node(
-            cell=cell,
-            origin=origin,
-            checked=list(checked),
-        )
+    def walk(
+        self,
+        cell: CellType,
+        direction: WindRose,
+    ) -> CellType:
+        """Walk from a point until you find a node, hit a wall or move outside the matrix.
+        Return row, col of the cell before either happens."""
+        cell_next = self.take_step(cell, direction)
+        while self.take_step(cell_next, direction):
+            if self.is_node(cell_next):
+                break
+            cell_next = self.take_step(cell_next, direction)
+        return cell_next
+
+    def take_step(
+        self,
+        cell: CellType,
+        direction: WindRose,
+    ) -> CellType:
+        row, col = cell
+        d_row, d_col = direction.value
+        cell_next = (row + d_row, col + d_col)
+        if self.is_traversable(cell_next):
+            return cell_next
+
+    def find_adjacent(
+        self, cell: CellType, except_: Optional[WindRose] = None
+    ) -> list[WindRose]:
+        directions = []
+        for direction in WindRose:
+            cell_adj = self.take_step(cell, direction)
+            if cell_adj is None:
+                continue
+            if self.mx.cell(cell_adj) is Maze.PATH:
+                directions.append(direction)
+        if except_ and except_ in directions:
+            directions.remove(except_)
+        return directions
+
+    def create_nodes(self) -> "BST":
+
+        def recursive_creep(node: Node):
+            for direction in WindRose:
+                if direction in node.checked:
+                    continue
+                if not self.take_step(node.cell, direction):
+                    node.checked.append(direction)
+                    continue
+                node_tmp = self.creep(node.cell, direction)
+                recursive_creep(node_tmp)
+                node.checked.append(direction)
+            self.bst_root.add(node)
+
+        node_start, _ = self.exit_nodes()
+        self.bst_root = BST(node_start)
+        recursive_creep(node_start)
+        return self.bst_root
 
     def exit_nodes(self) -> tuple[Node, Node]:
         cells = []
@@ -122,78 +178,22 @@ class Maze:
         end_node = self.create_node(end_cell, origin=None)
         return start_node, end_node
 
-    def create_nodes(self) -> "BST":
-
-        def recursive_creep(node: Node):
-            for direction in WindRose:
-                if direction in node.checked:
-                    continue
-                if not self.take_step(node.cell, direction):
-                    node.checked.append(direction)
-                    continue
-                node_tmp = self.creep(node.cell, direction)
-                recursive_creep(node_tmp)
-                node.checked.append(direction)
-            self.bst_root.add(node)
-
-        node_start, _ = self.exit_nodes()
-        self.bst_root = BST(node_start)
-        recursive_creep(node_start)
-        return self.bst_root
-
-    def take_step(
-        self,
-        cell: CellType,
-        direction: WindRose,
-    ) -> CellType:
-        row, col = cell
-        d_row, d_col = direction.value
-        cell_next = (row + d_row, col + d_col)
-        if self.is_traversable(cell_next):
-            return cell_next
-
-    def walk(
-        self,
-        cell: CellType,
-        direction: WindRose,
-    ) -> CellType:
-        """Walk from a point until you find a node, hit a wall or move outside the matrix.
-        Return row, col of the cell before either happens."""
-        cell_next = self.take_step(cell, direction)
-        while self.take_step(cell_next, direction):
-            if self.is_node(cell_next):
-                break
-            cell_next = self.take_step(cell_next, direction)
-        return cell_next
-
-    def creep(
-        self,
-        cell: CellType,
-        direction: WindRose,
-        traceback: bool = False
+    @staticmethod
+    def create_node(
+            cell: CellType,
+            origin: Optional[WindRose],
+            checked: Iterable[WindRose] = None,
     ) -> Node:
-        """Creep down a path and around corners to find the next junction or dead end."""
-        while True:
-            cell = self.walk(cell, direction)
-            if self.is_node(cell):  # TODO: optimize by pruning dead ends?
-                if traceback:
-                    return self.bst_root.find(cell)
-                return self.create_node(cell, origin=WindRose.opposite(direction))
-            direction = self.find_adjacent(cell, except_=WindRose.opposite(direction))[0]
+        if checked is None:
+            checked = []
+        if origin not in checked and origin is not None:
+            checked.append(origin)
 
-    def find_adjacent(
-        self, cell: CellType, except_: Optional[WindRose] = None
-    ) -> list[WindRose]:
-        directions = []
-        for direction in WindRose:
-            cell_adj = self.take_step(cell, direction)
-            if cell_adj is None:
-                continue
-            if self.mx.cell(cell_adj) is Maze.PATH:
-                directions.append(direction)
-        if except_ and except_ in directions:
-            directions.remove(except_)
-        return directions
+        return Node(
+            cell=cell,
+            origin=origin,
+            checked=list(checked),
+        )
 
     def is_traversable(self, cell: CellType):
         row, col = cell
