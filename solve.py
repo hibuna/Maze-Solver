@@ -12,13 +12,14 @@ from errors import (
     PathExitSpacingError,
 )
 
+CellType = tuple[int, int]
 RowType = ColType = tuple[bool, ...]
 MatrixType = tuple[RowType, ...]
 
 
 @dataclass
 class Node:
-    cell: tuple[int, int]
+    cell: CellType
     origin: Optional["WindRose"]
     checked: list["WindRose"]
 
@@ -64,7 +65,7 @@ class Matrix:
             raise IndexError(f"Index out of bounds: {index}")
         return tuple([row[index] for row in self.matrix])
 
-    def cell(self, cell: tuple[int, int]):
+    def cell(self, cell: CellType):
         row, col = cell
         return self.matrix[row][col]
 
@@ -82,7 +83,7 @@ class Maze:
 
     @staticmethod
     def create_node(
-        cell: tuple[int, int],
+        cell: CellType,
         origin: Optional[WindRose],
         checked: Iterable[WindRose] = None,
     ) -> Node:
@@ -142,9 +143,9 @@ class Maze:
 
     def take_step(
         self,
-        cell: tuple[int, int],
+        cell: CellType,
         direction: WindRose,
-    ) -> tuple[int, int]:
+    ) -> CellType:
         row, col = cell
         d_row, d_col = direction.value
         cell_next = (row + d_row, col + d_col)
@@ -153,9 +154,9 @@ class Maze:
 
     def walk(
         self,
-        cell: tuple[int, int],
+        cell: CellType,
         direction: WindRose,
-    ) -> tuple[int, int]:
+    ) -> CellType:
         """Walk from a point until you find a node, hit a wall or move outside the matrix.
         Return row, col of the cell before either happens."""
         cell_next = self.take_step(cell, direction)
@@ -167,7 +168,7 @@ class Maze:
 
     def creep(
         self,
-        cell: tuple[int, int],
+        cell: CellType,
         direction: WindRose,
         traceback: bool = False
     ) -> Node:
@@ -181,7 +182,7 @@ class Maze:
             direction = self.find_adjacent(cell, except_=WindRose.opposite(direction))[0]
 
     def find_adjacent(
-        self, cell: tuple[int, int], except_: Optional[WindRose] = None
+        self, cell: CellType, except_: Optional[WindRose] = None
     ) -> list[WindRose]:
         directions = []
         for direction in WindRose:
@@ -194,7 +195,7 @@ class Maze:
             directions.remove(except_)
         return directions
 
-    def is_traversable(self, cell: tuple[int, int]):
+    def is_traversable(self, cell: CellType):
         row, col = cell
         crossed_borders = (
             row < 0,
@@ -204,10 +205,10 @@ class Maze:
         )
         return not any(crossed_borders) and self.mx.cell(cell) is Maze.PATH
 
-    def is_node(self, cell: tuple[int, int]):
+    def is_node(self, cell: CellType):
         return len(self.find_adjacent(cell)) != 2
 
-    def is_junction(self, cell: tuple[int, int]):
+    def is_junction(self, cell: CellType):
         return len(self.find_adjacent(cell)) in (3, 4)
 
 
@@ -241,7 +242,7 @@ class BST:
         if not found and key > leaf.key:
             leaf.right = BST(maze_node)
 
-    def find(self, cell: tuple[int, int]):
+    def find(self, cell: CellType):
         bst_node, found = self._search(sum(cell))
         if not found:
             return
