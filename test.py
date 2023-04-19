@@ -7,7 +7,7 @@ from errors import (
     PathExitAmountError,
     PathExitSpacingError,
 )
-from solve import Maze, Matrix, Validator, WindRose, BST, CellType
+from solve import Maze, Matrix, Validator, WindRose, BST, Type
 
 
 class BSTMock:
@@ -17,7 +17,7 @@ class BSTMock:
     def add(self, node: dict):
         self.nodes.append(node)
 
-    def find(self, cell: CellType):
+    def find(self, cell: Type.Cell):
         for node in self.nodes:
             if node.cell == cell:
                 return node
