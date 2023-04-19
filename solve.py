@@ -266,33 +266,33 @@ class BST:
     def _search(self, key) -> tuple["BST", bool]:
         bst = self
         while True:
-            if bst.key < key:
-                if bst.left:
-                    bst = bst.left
-                elif bst.left and bst.left.key == key:
+            if key < bst.key:
+                if not bst.left:
+                    return bst, False
+                elif bst.left.key == key:
                     return bst.left, True
                 else:
+                    bst = bst.left
+            elif key > bst.key:
+                if not bst.right:
                     return bst, False
-            elif bst.key > key:
-                if bst.right:
-                    bst = bst.right
-                elif bst.right and bst.right.key == key:
+                elif bst.right.key == key:
                     return bst.right, True
                 else:
-                    return bst, False
+                    bst = bst.right
             else:
                 return bst, True
 
     def add(self, maze_node: Node) -> None:
         key = sum(maze_node.cell)
-        leaf, found = self._search(key)
-        if found and maze_node not in leaf.maze_nodes:
-            leaf.maze_nodes.append(maze_node)
+        bst, found = self._search(key)
+        if found and maze_node not in bst.maze_nodes:
+            bst.maze_nodes.append(maze_node)
             return
-        if not found and key < leaf.key:
-            leaf.left = BST(maze_node)
-        if not found and key > leaf.key:
-            leaf.right = BST(maze_node)
+        if not found and key < bst.key:
+            bst.left = BST(maze_node)
+        if not found and key > bst.key:
+            bst.right = BST(maze_node)
 
     def find(self, cell: Type.Cell):
         bst_node, found = self._search(sum(cell))
