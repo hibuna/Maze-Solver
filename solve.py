@@ -13,14 +13,16 @@ from errors import (
     PathExitSpacingError,
 )
 
-CellType = tuple[int, int]
-RowType = ColType = tuple[bool, ...]
-MatrixType = tuple[RowType, ...]
+class Type:
+    Cell = tuple[int, int]
+    Row = tuple[bool, ...]
+    Col = tuple[bool, ...]
+    Matrix = tuple[Row, ...]
 
 
 @dataclass
 class Node:
-    cell: CellType
+    cell: Type.Cell
     origin: Optional["WindRose"]
     checked: list["WindRose"]
 
@@ -49,28 +51,28 @@ class WindRose(enum.Enum):
 
 
 class Matrix:
-    def __init__(self, matrix: MatrixType):
+    def __init__(self, matrix: Type.Matrix):
         self.matrix = matrix
         self.width = len(matrix[0])
         self.height = len(matrix)
 
-    def row(self, index: int) -> RowType:
+    def row(self, index: int) -> Type.Row:
         i = index if index >= 0 else (index * -1) - 1  # equalize negative index
         if i >= self.height:
             raise IndexError(f"Index out of bounds: {index}")
         return self.matrix[index]
 
-    def col(self, index: int) -> ColType:
+    def col(self, index: int) -> Type.Col:
         i = index if index >= 0 else (index * -1) - 1  # equalize negative index
         if i >= self.width:
             raise IndexError(f"Index out of bounds: {index}")
         return tuple([row[index] for row in self.matrix])
 
-    def cell(self, cell: CellType):
+    def cell(self, cell: Type.Cell):
         row, col = cell
         return self.matrix[row][col]
 
-    def cells(self) -> list[CellType]:
+    def cells(self) -> list[Type.Cell]:
         cells = []
         for row in range(self.height):
             for col in range(self.width):
@@ -95,7 +97,7 @@ class Maze:
         self.create_nodes()
         self.find_solution()
 
-    def find_solution(self) -> list[CellType]:
+    def find_solution(self) -> list[Type.Cell]:
         solution = [self.node_end.cell]
         cell = self.node_end.cell
         direction = self.node_end.origin
@@ -111,7 +113,7 @@ class Maze:
 
     def creep(
         self,
-        cell: CellType,
+        cell: Type.Cell,
         direction: WindRose,
         save_path_to: list = None,
         traceback: bool = False,
@@ -127,10 +129,10 @@ class Maze:
 
     def walk(
         self,
-        cell: CellType,
+        cell: Type.Cell,
         direction: WindRose,
         save_path_to: list = None,
-    ) -> CellType:
+    ) -> Type.Cell:
         """Walk from a point until you find a node, hit a wall or move outside the matrix.
         Return row, col of the cell before either happens."""
         cell_next = self.take_step(cell, direction, save_path_to=save_path_to)
@@ -142,10 +144,10 @@ class Maze:
 
     def take_step(
         self,
-        cell: CellType,
+        cell: Type.Cell,
         direction: WindRose,
         save_path_to: list = None,
-    ) -> CellType:
+    ) -> Type.Cell:
         row, col = cell
         d_row, d_col = direction.value
         cell_next = (row + d_row, col + d_col)
@@ -155,7 +157,7 @@ class Maze:
             return cell_next
 
     def find_adjacent(
-        self, cell: CellType, except_: Optional[WindRose] = None
+        self, cell: Type.Cell, except_: Optional[WindRose] = None
     ) -> list[WindRose]:
         directions = []
         for direction in WindRose:
@@ -194,7 +196,7 @@ class Maze:
 
         return self.bst_root
 
-    def find_exit_cells(self) -> tuple[CellType, CellType]:
+    def find_exit_cells(self) -> tuple[Type.Cell, Type.Cell]:
         cells = []
         north_border = self.mx.row(0)
         east_border = self.mx.col(-1)
@@ -217,7 +219,7 @@ class Maze:
 
     @staticmethod
     def create_node(
-            cell: CellType,
+            cell: Type.Cell,
             origin: Optional[WindRose],
             checked: Iterable[WindRose] = None,
     ) -> Node:
@@ -232,7 +234,7 @@ class Maze:
             checked=list(checked),
         )
 
-    def is_traversable(self, cell: CellType):
+    def is_traversable(self, cell: Type.Cell):
         row, col = cell
         crossed_borders = (
             row < 0,
@@ -242,10 +244,10 @@ class Maze:
         )
         return not any(crossed_borders) and self.mx.cell(cell) is Maze.PATH
 
-    def is_node(self, cell: CellType):
+    def is_node(self, cell: Type.Cell):
         return len(self.find_adjacent(cell)) != 2
 
-    def is_junction(self, cell: CellType):
+    def is_junction(self, cell: Type.Cell):
         return len(self.find_adjacent(cell)) in (3, 4)
 
 
@@ -279,7 +281,7 @@ class BST:
         if not found and key > leaf.key:
             leaf.right = BST(maze_node)
 
-    def find(self, cell: CellType):
+    def find(self, cell: Type.Cell):
         bst_node, found = self._search(sum(cell))
         if not found:
             return
@@ -290,7 +292,7 @@ class BST:
 
 class Validator:
     @staticmethod
-    def validate(matrix: MatrixType):
+    def validate(matrix: Type.Matrix):
         Validator.size(matrix)
         Validator.corners(matrix)
         Validator.exit_amt(matrix)
@@ -299,12 +301,12 @@ class Validator:
         Validator.exit_pos(maze)
 
     @staticmethod
-    def size(matrix: MatrixType) -> None:
+    def size(matrix: Type.Matrix) -> None:
         if len(matrix) < 3 or any(len(row) < 3 for row in matrix):
             raise MatrixSizeError("Matrix must be at least 3x3")
 
     @staticmethod
-    def corners(matrix: MatrixType) -> None:
+    def corners(matrix: Type.Matrix) -> None:
         corners = [
             matrix[0][0],
             matrix[0][-1],
@@ -315,7 +317,7 @@ class Validator:
             raise PathCornerError("Corner cannot be path")
 
     @staticmethod
-    def exit_amt(matrix: MatrixType) -> None:
+    def exit_amt(matrix: Type.Matrix) -> None:
         matrix = Matrix(matrix)
         border_cells = (
             *[cell for cell in matrix.row(0)],  # North
