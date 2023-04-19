@@ -2,6 +2,7 @@ import enum
 import os
 import sys
 from typing import Optional, Iterable
+from dataclasses import dataclass
 
 import image2matrix as i2m
 from errors import (
@@ -13,6 +14,13 @@ from errors import (
 
 RowType = ColType = tuple[bool, ...]
 MatrixType = tuple[RowType, ...]
+
+
+@dataclass
+class Node:
+    cell: tuple[int, int]
+    origin: Optional["WindRose"]
+    checked: list["WindRose"]
 
 
 class WindRose(enum.Enum):
@@ -64,7 +72,10 @@ class Matrix:
 class Maze:
     def __init__(self, matrix: Matrix):
         self.mx = matrix
-        self.bst_root: Optional[BST] = None
+        self.bst_root: BST = None
+        self.solution: list = []
+        self.node_start: Node = None
+        self.node_end: Node = None
 
     WALL = False
     PATH = True
@@ -74,19 +85,19 @@ class Maze:
         cell: tuple[int, int],
         origin: Optional[WindRose],
         checked: Iterable[WindRose] = None,
-    ) -> dict:
+    ) -> Node:
         if checked is None:
             checked = []
         if origin not in checked and origin is not None:
             checked.append(origin)
 
-        return {
-            "cell": cell,
-            "origin": origin,
-            "checked": checked,
-        }
+        return Node(
+            cell=cell,
+            origin=origin,
+            checked=list(checked),
+        )
 
-    def exit_nodes(self) -> tuple[dict, dict]:
+    def exit_nodes(self) -> tuple[Node, Node]:
         cells = []
         north_border = self.mx.row(0)
         east_border = self.mx.col(-1)
@@ -112,16 +123,16 @@ class Maze:
 
     def create_nodes(self) -> "BST":
 
-        def recursive_creep(node: dict):
+        def recursive_creep(node: Node):
             for direction in WindRose:
-                if direction in node["checked"]:
+                if direction in node.checked:
                     continue
-                if not self.take_step(node["cell"], direction):
-                    node["checked"].append(direction)
+                if not self.take_step(node.cell, direction):
+                    node.checked.append(direction)
                     continue
-                node_tmp = self.creep(node["cell"], direction)
+                node_tmp = self.creep(node.cell, direction)
                 recursive_creep(node_tmp)
-                node["checked"].append(direction)
+                node.checked.append(direction)
             self.bst_root.add(node)
 
         node_start, _ = self.exit_nodes()
@@ -129,14 +140,22 @@ class Maze:
         recursive_creep(node_start)
         return self.bst_root
 
-    def take_step(self, cell: tuple[int, int], direction: WindRose) -> tuple[int, int]:
+    def take_step(
+        self,
+        cell: tuple[int, int],
+        direction: WindRose,
+    ) -> tuple[int, int]:
         row, col = cell
         d_row, d_col = direction.value
         cell_next = (row + d_row, col + d_col)
         if self.is_traversable(cell_next):
             return cell_next
 
-    def walk(self, cell: tuple[int, int], direction: WindRose) -> tuple[int, int]:
+    def walk(
+        self,
+        cell: tuple[int, int],
+        direction: WindRose,
+    ) -> tuple[int, int]:
         """Walk from a point until you find a node, hit a wall or move outside the matrix.
         Return row, col of the cell before either happens."""
         cell_next = self.take_step(cell, direction)
@@ -146,11 +165,18 @@ class Maze:
             cell_next = self.take_step(cell_next, direction)
         return cell_next
 
-    def creep(self, cell: tuple[int, int], direction: WindRose) -> dict:
+    def creep(
+        self,
+        cell: tuple[int, int],
+        direction: WindRose,
+        traceback: bool = False
+    ) -> Node:
         """Creep down a path and around corners to find the next junction or dead end."""
         while True:
-            cell = self.walk(cell, direction=direction)
+            cell = self.walk(cell, direction)
             if self.is_node(cell):  # TODO: optimize by pruning dead ends?
+                if traceback:
+                    return self.bst_root.find(cell)
                 return self.create_node(cell, origin=WindRose.opposite(direction))
             direction = self.find_adjacent(cell, except_=WindRose.opposite(direction))[0]
 
@@ -187,8 +213,8 @@ class Maze:
 
 class BST:
     """Binary Search Tree"""
-    def __init__(self, maze_node: dict) -> None:
-        self.key = sum(maze_node["cell"])
+    def __init__(self, maze_node: Node) -> None:
+        self.key = sum(maze_node.cell)
         self.maze_nodes = [maze_node]
         self.left = None
         self.right = None
@@ -204,8 +230,8 @@ class BST:
             return self, False
         return self, True
 
-    def add(self, maze_node: dict) -> None:
-        key = sum(maze_node["cell"])
+    def add(self, maze_node: Node) -> None:
+        key = sum(maze_node.cell)
         leaf, found = self._search(key)
         if found and maze_node not in leaf.maze_nodes:
             leaf.maze_nodes.append(maze_node)
@@ -220,7 +246,7 @@ class BST:
         if not found:
             return
         for node in bst_node.maze_nodes:
-            if node["cell"] == cell:
+            if node.cell == cell:
                 return node
 
 
@@ -266,8 +292,8 @@ class Validator:
     @staticmethod
     def exit_pos(maze: Maze) -> None:
         node_start, node_end = maze.exit_nodes()
-        row_start, col_start = node_start["cell"]
-        row_end, col_end = node_end["cell"]
+        row_start, col_start = node_start.cell
+        row_end, col_end = node_end.cell
         d_y = abs(row_start - row_end)
         d_x = abs(col_start - col_end)
         if d_x == 0 and d_y == 1 or d_y == 0 and d_x == 1:

@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from errors import (
     MatrixSizeError,
@@ -162,8 +162,8 @@ class MazeTest(unittest.TestCase):
         maze2 = Maze(Matrix(matrix2))
         node1 = maze1.creep((0, 1), WindRose.S)
         node2 = maze2.creep((0, 1), WindRose.S)
-        assert node1["cell"] == (3, 2)
-        assert node2["cell"] == (1, 2)
+        assert node1.cell == (3, 2)
+        assert node2.cell == (1, 2)
 
     def test_create_nodes_creates_all_nodes(self):
         matrix1 = (
@@ -188,8 +188,8 @@ class MazeTest(unittest.TestCase):
             nodes1 = maze1.create_nodes().nodes
             nodes2 = maze2.create_nodes().nodes
 
-        cells1 = [node["cell"] for node in nodes1]
-        cells2 = [node["cell"] for node in nodes2]
+        cells1 = [node.cell for node in nodes1]
+        cells2 = [node.cell for node in nodes2]
 
         assert len(cells1) == 6
         assert len(cells2) == 7
@@ -220,18 +220,18 @@ class MazeTest(unittest.TestCase):
             nodes = maze.create_nodes().nodes
 
         for node in nodes:
-            assert len(node["checked"]) == 4
+            assert len(node.checked) == 4
             for direction in WindRose:
-                assert direction in node["checked"]
+                assert direction in node.checked
 
-            if node["cell"] == (0, 1):
-                assert node["origin"] is None
-            elif node["cell"] == (1, 1):
-                assert node["origin"] is WindRose.N
-            elif node["cell"] == (1, 2):
-                assert node["origin"] is WindRose.W
-            elif node["cell"] == (2, 1):
-                assert node["origin"] is WindRose.N
+            if node.cell == (0, 1):
+                assert node.origin is None
+            elif node.cell == (1, 1):
+                assert node.origin is WindRose.N
+            elif node.cell == (1, 2):
+                assert node.origin is WindRose.W
+            elif node.cell == (2, 1):
+                assert node.origin is WindRose.N
             else:
                 assert 0
 
@@ -246,14 +246,14 @@ class BinarySearchTreeTest(unittest.TestCase):
         #          \ 200 x2
         #        175 / \ 225 x2
         # ---------------------
-        cls.root_cell = {"cell": (0, 100)}
-        cls.root_l_cell = {"cell": (0, 50)}
-        cls.root_r_cell = {"cell": (0, 150)}
-        cls.root_rr_cell1 = {"cell": (0, 200)}
-        cls.root_rr_cell2 = {"cell": (100, 100)}
-        cls.root_rrl_cell = {"cell": (175, 0)}
-        cls.root_rrr_cell1 = {"cell": (0, 225)}
-        cls.root_rrr_cell2 = {"cell": (225, 0)}
+        cls.root_cell = MagicMock(cell=(0, 100))
+        cls.root_l_cell = MagicMock(cell=(0, 50))
+        cls.root_r_cell = MagicMock(cell=(0, 150))
+        cls.root_rr_cell1 = MagicMock(cell=(0, 200))
+        cls.root_rr_cell2 = MagicMock(cell=(100, 100))
+        cls.root_rrl_cell = MagicMock(cell=(175, 0))
+        cls.root_rrr_cell1 = MagicMock(cell=(0, 225))
+        cls.root_rrr_cell2 = MagicMock(cell=(225, 0))
 
         bst_root = BST(cls.root_cell)
         bst_root.add(cls.root_l_cell)
