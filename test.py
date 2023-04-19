@@ -182,6 +182,8 @@ class MazeTest(unittest.TestCase):
         )
         maze1 = Maze(Matrix(matrix1))
         maze2 = Maze(Matrix(matrix2))
+        maze1.create_exit_nodes()
+        maze2.create_exit_nodes()
 
         # mock BST to just return a list of created nodes
         with patch("solve.BST", BSTMock):
@@ -214,6 +216,7 @@ class MazeTest(unittest.TestCase):
             (0, 1, 0, 0),
         )
         maze = Maze(Matrix(matrix))
+        maze.create_exit_nodes()
 
         # mock BST to just return a list of created nodes
         with patch("solve.BST", BSTMock):

@@ -81,6 +81,15 @@ class Maze:
     WALL = False
     PATH = True
 
+    def solve(self):
+        self.create_exit_nodes()
+        self.create_nodes()
+        self.find_solution()
+        # some image_creation
+
+    def find_solution(self) -> list[CellType]:
+        ...
+
     def creep(
         self,
         cell: CellType,
@@ -149,12 +158,12 @@ class Maze:
                 node.checked.append(direction)
             self.bst_root.add(node)
 
-        node_start, _ = self.exit_nodes()
+        node_start = self.node_start
         self.bst_root = BST(node_start)
         recursive_creep(node_start)
         return self.bst_root
 
-    def exit_nodes(self) -> tuple[Node, Node]:
+    def create_exit_nodes(self) -> tuple[Node, Node]:
         cells = []
         north_border = self.mx.row(0)
         east_border = self.mx.col(-1)
@@ -174,9 +183,9 @@ class Maze:
                 cells.append((i, 0))
 
         start_cell, end_cell = cells
-        start_node = self.create_node(start_cell, origin=None)
-        end_node = self.create_node(end_cell, origin=None)
-        return start_node, end_node
+        self.node_start = self.create_node(start_cell, origin=None)
+        self.node_end = self.create_node(end_cell, origin=None)
+        return self.node_start, self.node_end
 
     @staticmethod
     def create_node(
@@ -292,7 +301,7 @@ class Validator:
 
     @staticmethod
     def exit_pos(maze: Maze) -> None:
-        node_start, node_end = maze.exit_nodes()
+        node_start, node_end = maze.create_exit_nodes()
         row_start, col_start = node_start.cell
         row_end, col_end = node_end.cell
         d_y = abs(row_start - row_end)
