@@ -6,7 +6,7 @@ _Simple implementation of a maze solving algorithm._
 
 ## Example
 
-![400x400](img\maze_small%20-%20solved.png)
+![Solved maze (2000x2000)](https://imgur.com/sffOGQ3)
 
 ---
 
@@ -18,7 +18,7 @@ _Install [python](https://www.python.org/downloads/) v3.10 or higher._
 #### Step 2:
 _Download and unzip this repo and open the containing folder through a CLI:_
 
-![cli](img\cli.png)
+![cli](https://imgur.com/gXcm7b1)
 
 #### Step 3:
 _Create and activate a virtual environment contain installed dependencies:_
@@ -33,14 +33,14 @@ _Download and install dependencies:_
 #### Step 5 (Optional):
 _Generate a maze with [this](https://keesiemeijer.github.io/maze-generator/#generate) tool and these settings:_
 
-![generation settings](img\generation_settings.png)
+![generation settings](https://imgur.com/RmTazOq)
 
 
 #### Step 6:
 _Run the algorithm:_
 
-`py solve.py "{path_to_generated_maze}"` max 400x400\
-`py solve.py "img\maze_small.png"` 400x400\
-`py solve.py "img\maze_medium.png"` 1000x1000\
-`py solve.py "img\maze_large.png"` 2000x2000
+`py solve.py "{path_to_generated_maze}"` max. 400x400\
+`py solve.py "maze_small.png"` 400x400\
+`py solve.py "maze_medium.png"` 1000x1000\
+`py solve.py "maze_large.png"` 2000x2000
 
