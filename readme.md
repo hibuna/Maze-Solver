@@ -21,7 +21,7 @@ _Download and unzip this repo and open the containing folder through a CLI:_
 ![cli](https://i.imgur.com/gXcm7b1.png)
 
 #### Step 3:
-_Create and activate a virtual environment contain installed dependencies:_
+_Create and activate a virtual environment to contain installed dependencies:_
 
 `py -m venv venv && venv\Scripts\activate` (Windows)
 
@@ -43,4 +43,3 @@ _Run the algorithm:_
 `py solve.py "maze_small.png"` 400x400\
 `py solve.py "maze_medium.png"` 1000x1000\
 `py solve.py "maze_large.png"` 2000x2000
-
