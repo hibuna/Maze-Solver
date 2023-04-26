@@ -4,9 +4,6 @@ import sys
 from typing import Optional, Iterable
 from dataclasses import dataclass
 
-import mazelib
-from mazelib.generate.BacktrackingGenerator import BacktrackingGenerator
-
 import image2matrix as i2m
 import matrix2image as m2i
 from errors import (
@@ -175,24 +172,35 @@ class Maze:
         return directions
 
     def create_nodes(self) -> "BST":
+        cell_start, cell_end = self.find_exit_cells()
+        self.node_start = self.create_node(cell_start, origin=None)
 
-        def recursive_creep(node: Node):
+        self.bst_root = BST(self.node_start)
+
+        # While checking a node, append all existing neighbour Nodes to the stack.
+        # After having checked all directions, remove the node from the stack and
+        # repeat the proces with the first encountered neighbour node
+        recursion_stack = [self.node_start]
+        while True:
+            node = recursion_stack[0]
             for direction in WindRose:
                 if direction in node.checked:
                     continue
                 if not self.take_step(node.cell, direction):
                     node.checked.append(direction)
                     continue
-                node_tmp = self.creep(node.cell, direction)
-                recursive_creep(node_tmp)
+
+                next_node = self.creep(node.cell, direction)
+                recursion_stack.append(next_node)
                 node.checked.append(direction)
+
             self.bst_root.add(node)
 
-        cell_start, cell_end = self.find_exit_cells()
-        self.node_start = self.create_node(cell_start, origin=None)
+            if len(node.checked) == 4:
+                recursion_stack.remove(node)
 
-        self.bst_root = BST(self.node_start)
-        recursive_creep(self.node_start)
+            if not recursion_stack:
+                break
 
         # Set origin of ending Node to set up traceback
         self.node_end = self.bst_root.find(cell_end)
@@ -360,18 +368,11 @@ if __name__ == "__main__":
 
     # generate your own maze img with: https://keesiemeijer.github.io/maze-generator/
     maze_path = i2m.get_maze_path(png=path)
-    # i2m.print_maze(matrix=maze_path)
-
-    # maze = mazelib.Maze()
-    # maze.generator = BacktrackingGenerator(1000, 1000)
-    # maze.generate()
-    # maze.generate_entrances()
 
     Validator.validate(matrix=maze_path)
     maze = Maze(Matrix(maze_path))
     maze.solve()
 
     target_file = f"{file.split('.')[0]} - solved.png"
-    target = os.path.join(os.path.dirname(__file__), path)
+    target = os.path.join(os.path.dirname(__file__), target_file)
     m2i.create_png(target, (maze.mx.width, maze.mx.height), maze.mx.cells(), maze.solution)
-    # m2i.create_png(target, (len(maze.grid), len(maze.grid)), maze.grid, [])
