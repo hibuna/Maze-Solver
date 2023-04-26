@@ -6,7 +6,7 @@ _Simple implementation of a maze solving algorithm._
 
 ## Example
 
-![Solved maze (2000x2000)](https://i.imgur.com/sffOGQ3.png)
+![Solved maze (2000x2000)](https://i.imgur.com/A5jaQvQ.png)
 
 ---
 
